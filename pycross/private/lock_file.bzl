@@ -56,6 +56,9 @@ def _pycross_lock_file_impl(ctx):
     if ctx.attr.pypi_index:
         args.add("--pypi-index", ctx.attr.pypi_index)
 
+    if ctx.attr.use_rules_py:
+        args.add("--use-rules-py")
+
     ctx.actions.run(
         inputs = (
             ctx.files.lock_model_file +
@@ -122,6 +125,9 @@ pycross_lock_file = rule(
         ),
         "pypi_index": attr.string(
             doc = "The PyPI-compatible index to use (must support the JSON API).",
+        ),
+        "use_rules_py": attr.bool(
+            doc = "Generate targets that use https://github.com/aspect-build/rules_py",
         ),
         "out": attr.output(
             doc = "The output file.",

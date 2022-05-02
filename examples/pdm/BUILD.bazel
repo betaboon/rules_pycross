@@ -76,6 +76,7 @@ pycross_pdm_lock_model(
 
 pycross_lock_file(
     name = "example_lock",
+    use_rules_py = True,
     lock_model_file = ":example_lock_model",
     target_environments = [
         ":python_darwin_x86_64",

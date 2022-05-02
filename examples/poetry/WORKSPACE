@@ -31,6 +31,17 @@ load("@jvolkman_rules_pycross//pycross:repositories.bzl", "rules_pycross_depende
 
 rules_pycross_dependencies(python_interpreter_target = interpreter)
 
+http_archive(
+    name = "aspect_rules_py",
+    sha256 = "c977cadb8703e325f02c1e6a3718e85f52b158e199654b1a28125c420588d720",
+    strip_prefix = "rules_py-0.2.0",
+    url = "https://github.com/aspect-build/rules_py/releases/download/v0.2.0/rules_py-v0.2.0.tar.gz",
+)
+
+load("@aspect_rules_py//py:repositories.bzl", "rules_py_dependencies")
+
+rules_py_dependencies()
+
 load("@jvolkman_rules_pycross//pycross:defs.bzl", "pycross_lock_repo")
 
 pycross_lock_repo(
