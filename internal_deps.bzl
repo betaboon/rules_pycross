@@ -12,9 +12,9 @@ def rules_pycross_internal_deps():
     maybe(
         http_archive,
         name = "rules_python",
-        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.7.0.tar.gz",
-        strip_prefix = "rules_python-0.7.0",
-        sha256 = "15f84594af9da06750ceb878abbf129241421e3abbd6e36893041188db67f2fb",
+        url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.9.0.tar.gz",
+        strip_prefix = "rules_python-0.9.0",
+        sha256 = "5fa3c738d33acca3b97622a13a741129f67ef43f5fdfcec63b29374cc0574c29",
     )
 
     maybe(

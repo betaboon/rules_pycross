@@ -2,12 +2,12 @@
 
 load(":cc_toolchain_util.bzl", "absolutize_path_in_str", "get_env_vars", "get_flags_info", "get_tools_info")
 load(":providers.bzl", "PycrossTargetEnvironmentInfo", "PycrossWheelInfo")
-
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
 load("@rules_python//python:defs.bzl", "PyInfo")
 
 PYTHON_TOOLCHAIN_TYPE = "@bazel_tools//tools/python:toolchain_type"
+PYCROSS_TOOLCHAIN_TYPE = "@jvolkman_rules_pycross//pycross:toolchain_type"
 
 def _absolute_tool_value(workspace_name, value):
     if value:
@@ -30,7 +30,7 @@ def _get_sysconfig_data(workspace_name, tools, flags):
         "CXX": cxx,
         "CFLAGS": " ".join(flags.cc),
         "CCSHARED": "-fPIC" if flags.needs_pic_for_dynamic_libraries else "",
-        "LDSHARED": " ".join([cc] + flags.cxx_linker_shared),
+        "LDSHAREDFLAGS": " ".join(flags.cxx_linker_shared),
         "AR": ar,
         "ARFLAGS": " ".join(flags.cxx_linker_static),
         "CUSTOMIZED_OSX_COMPILER": "True",
@@ -41,6 +41,7 @@ def _get_sysconfig_data(workspace_name, tools, flags):
 
 def _pycross_wheel_build_impl(ctx):
     cc_sysconfig_data = ctx.actions.declare_file(paths.join(ctx.attr.name, "cc_sysconfig.json"))
+    pycross_info = ctx.toolchains[PYCROSS_TOOLCHAIN_TYPE].pycross_info
 
     sdist_name = ctx.file.sdist.basename
     if sdist_name.lower().endswith(".tar.gz"):
@@ -67,7 +68,23 @@ def _pycross_wheel_build_impl(ctx):
         out_wheel.path,
         "--wheel-name-file",
         out_name.path,
+        "--exec-python-executable",
+        pycross_info.exec_python_executable,
+        "--target-python-executable",
+        pycross_info.target_python_executable,
     ]
+
+    for s in pycross_info.exec_sys_path:
+        args.extend([
+            "--exec-sys-path",
+            s,
+        ])
+
+    for s in pycross_info.target_sys_path:
+        args.extend([
+            "--target-sys-path",
+            s,
+        ])
 
     imports = depset(
         transitive = [d[PyInfo].imports for d in ctx.attr.deps],
@@ -129,6 +146,10 @@ def _pycross_wheel_build_impl(ctx):
         toolchain_deps.append(cpp_toolchain.all_files)
     if py_toolchain.files:
         toolchain_deps.append(py_toolchain.files)
+    if pycross_info.exec_python_files:
+        toolchain_deps.append(pycross_info.exec_python_files)
+    if pycross_info.target_python_files:
+        toolchain_deps.append(pycross_info.target_python_files)
 
     env = dict(cc_vars)
     env.update(ctx.configuration.default_shell_env)
@@ -185,7 +206,7 @@ pycross_wheel_build = rule(
             default = Label("@bazel_tools//tools/cpp:current_cc_toolchain"),
         ),
     },
-    toolchains = [PYTHON_TOOLCHAIN_TYPE] + use_cpp_toolchain(),
+    toolchains = [PYTHON_TOOLCHAIN_TYPE, PYCROSS_TOOLCHAIN_TYPE] + use_cpp_toolchain(),
     fragments = ["cpp"],
     host_fragments = ["cpp"],
 )
