@@ -6,10 +6,14 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_python",
-    sha256 = "8c8fe44ef0a9afc256d1e75ad5f448bb59b81aba149b8958f02f7b3a98f5d9b4",
-    strip_prefix = "rules_python-0.13.0",
-    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.13.0.tar.gz",
+    sha256 = "9d04041ac92a0985e344235f5d946f71ac543f1b1565f2cdbc9a2aaee8adf55b",
+    strip_prefix = "rules_python-0.26.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.26.0/rules_python-0.26.0.tar.gz",
 )
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
 
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 
@@ -33,9 +37,9 @@ rules_pycross_dependencies(python_interpreter_target = interpreter)
 
 http_archive(
     name = "aspect_rules_py",
-    sha256 = "c977cadb8703e325f02c1e6a3718e85f52b158e199654b1a28125c420588d720",
-    strip_prefix = "rules_py-0.2.0",
-    url = "https://github.com/aspect-build/rules_py/releases/download/v0.2.0/rules_py-v0.2.0.tar.gz",
+    sha256 = "50b4b43491cdfc13238c29cb159b7ccacf0a1e54bd27b65ff2d5fac69af4d46f",
+    strip_prefix = "rules_py-0.4.0",
+    url = "https://github.com/aspect-build/rules_py/releases/download/v0.4.0/rules_py-v0.4.0.tar.gz",
 )
 
 load("@aspect_rules_py//py:repositories.bzl", "rules_py_dependencies")
@@ -53,47 +57,17 @@ load("@example_lock_repo//:requirements.bzl", "install_deps")
 
 install_deps()
 
-# Setup a CC toolchain using bazel-zig-cc
-# https://git.sr.ht/~motiejus/bazel-zig-cc
-BAZEL_ZIG_CC_VERSION = "v1.0.0"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
 
 http_archive(
-    name = "bazel-zig-cc",
-    sha256 = "1f4a1d1e0f6b3e5aa6e1c225fcb23c032f8849441de97b9a38d6ea37362d28e2",
-    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
-    urls = ["https://git.sr.ht/~motiejus/bazel-zig-cc/archive/{}.tar.gz".format(BAZEL_ZIG_CC_VERSION)],
-)
-
-load(
-    "@bazel-zig-cc//toolchain:defs.bzl",
-    "URL_FORMAT_JAKSTYS",
-    "URL_FORMAT_NIGHTLY",
-    "URL_FORMAT_RELEASE",
-    zig_toolchains = "toolchains",
-)
-
-zig_version = "0.10.1"
-
-zig_host_platform_sha256 = {
-    "linux-aarch64": "db0761664f5f22aa5bbd7442a1617dd696c076d5717ddefcc9d8b95278f71f5d",
-    "linux-x86_64": "6699f0e7293081b42428f32c9d9c983854094bd15fee5489f12c4cf4518cc380",
-    "macos-aarch64": "b9b00477ec5fa1f1b89f35a7d2a58688e019910ab80a65eac2a7417162737656",
-    "macos-x86_64": "02483550b89d2a3070c2ed003357fd6e6a3059707b8ee3fbc0c67f83ca898437",
-}
-
-zig_toolchains(
-    host_platform_sha256 = zig_host_platform_sha256,
-    url_formats = [
-        URL_FORMAT_RELEASE,
-        URL_FORMAT_NIGHTLY,
-        URL_FORMAT_JAKSTYS,
+    name = "hermetic_cc_toolchain",
+    sha256 = "28fc71b9b3191c312ee83faa1dc65b38eb70c3a57740368f7e7c7a49bedf3106",
+    urls = [
+        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
     ],
-    version = zig_version,
 )
 
-register_toolchains(
-    "@zig_sdk//toolchain:linux_amd64_gnu.2.19",
-    "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
-    "@zig_sdk//toolchain:darwin_amd64",
-    "@zig_sdk//toolchain:darwin_arm64",
-)
+load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
+
+zig_toolchains()
