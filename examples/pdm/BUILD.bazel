@@ -75,7 +75,7 @@ pycross_pdm_lock_model(
 )
 
 pycross_lock_file(
-    name = "example_lock",
+    name = "example_lock_rules_py",
     use_rules_py = True,
     lock_model_file = ":example_lock_model",
     target_environments = [
@@ -83,62 +83,40 @@ pycross_lock_file(
         ":python_darwin_arm64",
         ":python_linux_x86_64",
     ],
-    remote_wheels = {
-        "https://files.pythonhosted.org/packages/3.7/x/xmltodict/xmltodict-0.12.0-py2.py3-none-any.whl": "8bbcb45cc982f48b2ca8fe7e7827c5d792f217ecf1792626f808bf41c3b86051",
-    },
-    local_wheels = [
-        "//wheels",
-    ],
     default_alias_single_version = True,
-    build_target_overrides = {
-        "future@0.18.3": "@//deps:overridden_future_0.18.3",
-    },
-    always_build_packages = [
-        "pbr@5.11.1",
-        "setproctitle",
-#        "numpy",  # Doesn't work with zig cc since numpy can't detect the compiler type (assumes gcc)
-    ],
     package_build_dependencies = {
-        "numpy": [
-            "cython",
-            "setuptools",
-            "wheel",
-        ],
-        "setproctitle": [
-            "setuptools",
-            "wheel",
-        ],
-        "cowsay": [
-            "setuptools",
-            "wheel",
-        ],
-        "tree-sitter": [
-            "setuptools",
-            "wheel",
-        ],
-        "pbr": [
-            "setuptools",
-            "wheel",
-        ],
-        "django-allauth": [
-            "setuptools",
-            "wheel",
-        ],
-        "greenlet": [
-            "setuptools",
-            "wheel",
-        ],
-        "sqlalchemy": [
+        "grpclib": [
             "setuptools",
             "wheel",
         ],
     },
     pypi_index = "https://pypi.org",
-    out = "example_lock.bzl",
+    out = "example_lock_rules_py.bzl",
+)
+
+pycross_lock_file(
+    name = "example_lock_rules_python",
+    use_rules_py = False,
+    lock_model_file = ":example_lock_model",
+    target_environments = [
+        ":python_darwin_x86_64",
+        ":python_darwin_arm64",
+        ":python_linux_x86_64",
+    ],
+    default_alias_single_version = True,
+    package_build_dependencies = {
+        "grpclib": [
+            "setuptools",
+            "wheel",
+        ],
+    },
+    pypi_index = "https://pypi.org",
+    out = "example_lock_rules_python.bzl",
 )
 
 _GENERATED = {
-    "example_lock.bzl": "//:example_lock.bzl",
+    "example_lock_rules_py.bzl": "//:example_lock_rules_py.bzl",
+    "example_lock_rules_python.bzl": "//:example_lock_rules_python.bzl",
 }
 
 # Generate the updater script so there's only one target for devs to run,

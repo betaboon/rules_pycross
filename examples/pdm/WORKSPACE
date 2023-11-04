@@ -49,11 +49,20 @@ rules_py_dependencies()
 load("@jvolkman_rules_pycross//pycross:defs.bzl", "pycross_lock_repo")
 
 pycross_lock_repo(
-    name = "example_lock_repo",
-    lock_file = "//:example_lock.bzl",
+    name = "example_lock_repo_rules_py",
+    lock_file = "//:example_lock_rules_py.bzl",
 )
 
-load("@example_lock_repo//:requirements.bzl", "install_deps")
+load("@example_lock_repo_rules_py//:requirements.bzl", "install_deps")
+
+install_deps()
+
+pycross_lock_repo(
+    name = "example_lock_repo_rules_python",
+    lock_file = "//:example_lock_rules_python.bzl",
+)
+
+load("@example_lock_repo_rules_python//:requirements.bzl", "install_deps")
 
 install_deps()
 

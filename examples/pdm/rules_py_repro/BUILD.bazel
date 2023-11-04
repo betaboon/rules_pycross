@@ -1,0 +1,8 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@example_lock_repo_rules_py//:requirements.bzl", "requirement")
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
+    deps = [requirement("grpclib")],
+)
