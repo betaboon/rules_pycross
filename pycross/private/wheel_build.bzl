@@ -5,6 +5,7 @@ load(":providers.bzl", "PycrossTargetEnvironmentInfo", "PycrossWheelInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
 load("@rules_python//python:defs.bzl", "PyInfo")
+load("@aspect_rules_py//py/private:providers.bzl", "PyWheelInfo")
 
 PYTHON_TOOLCHAIN_TYPE = "@bazel_tools//tools/python:toolchain_type"
 PYCROSS_TOOLCHAIN_TYPE = "@jvolkman_rules_pycross//pycross:toolchain_type"
@@ -133,6 +134,9 @@ def _pycross_wheel_build_impl(ctx):
     else:
         wheel_name = sdist_name.rsplit(".", 1)[0]  # Also includes .zip
 
+    # TODO generate a valid PEP-0427 name depending on environment
+    wheel_name = wheel_name + "-py3-none-any"
+
     out_wheel = ctx.actions.declare_file(paths.join(ctx.attr.name, wheel_name + ".whl"))
     out_name = ctx.actions.declare_file(paths.join(ctx.attr.name, wheel_name + ".whl.name"))
 
@@ -179,11 +183,30 @@ def _pycross_wheel_build_impl(ctx):
         args.add("--exec-python-executable", executable)
         args.add("--target-python-executable", executable)
 
+    imports_depsets = [
+        depset([
+          i
+          for i in dep[PyInfo].imports.to_list()
+          if i != ctx.workspace_name
+        ])
+        for dep in ctx.attr.deps
+    ]
+
     imports = depset(
-        transitive = [d[PyInfo].imports for d in ctx.attr.deps],
+        transitive = imports_depsets,
     )
 
     args.add_all(imports, before_each="--path", map_each=_resolve_import_path_fn(ctx), allow_closure=True)
+
+    wheels_depset = depset(
+      transitive = [
+        dep[PyWheelInfo].files
+        for dep in ctx.attr.deps
+        if PyWheelInfo in dep
+      ]
+    )
+
+    args.add_all(wheels_depset, before_each="--wheel")
 
     ctx.actions.write(cc_sysconfig_data, json.encode(sysconfig_vars))
 
@@ -191,6 +214,7 @@ def _pycross_wheel_build_impl(ctx):
         ctx.file.sdist,
         cc_sysconfig_data,
     ]
+    deps.extend(wheels_depset.to_list())
 
     transitive_sources = [dep[PyInfo].transitive_sources for dep in ctx.attr.deps if PyInfo in dep]
 

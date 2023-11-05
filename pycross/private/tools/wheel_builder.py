@@ -407,7 +407,10 @@ def build_cross_venv(
 
 
 def build_standard_venv(
-    env_dir: Path, exec_python_exe: Path, sysconfig_vars: Dict[str, Any]
+    env_dir: Path,
+    exec_python_exe: Path,
+    sysconfig_vars: Dict[str, Any],
+    wheels: List[Path],
 ) -> None:
     venv_args = [
         exec_python_exe,
@@ -436,6 +439,26 @@ def build_standard_venv(
             'import os; os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = "_pycross_sysconfigdata"\n'
         )
 
+    # install wheels
+    for wheel in wheels:
+        installer_args = [
+            exec_python_exe,
+            "-m",
+            "installer",
+            "--prefix=/",
+            "--destdir",
+            str(env_dir),
+            wheel,
+        ]
+        try:
+            subprocess.check_output(
+                args=installer_args, env=os.environ, stderr=subprocess.STDOUT
+            )
+        except subprocess.CalledProcessError as cpe:
+            print("===== WHEEL INSTALL FAILED =====", file=sys.stderr)
+            print(cpe.output.decode(), file=sys.stderr)
+            raise
+
 
 def build_venv(
     env_dir: Path,
@@ -443,6 +466,7 @@ def build_venv(
     target_python_exe: Path,
     sysconfig_vars: Dict[str, Any],
     path: List[str],
+    wheels: List[Path],
     target_env: TargetEnv,
     always_use_crossenv: bool = False,
 ) -> None:
@@ -451,7 +475,7 @@ def build_venv(
             env_dir, exec_python_exe, target_python_exe, sysconfig_vars, target_env
         )
     else:
-        build_standard_venv(env_dir, exec_python_exe, sysconfig_vars)
+        build_standard_venv(env_dir, exec_python_exe, sysconfig_vars, wheels)
 
     site = find_site_dir(env_dir)
     with open(site / "deps.pth", "w") as f:
@@ -466,7 +490,6 @@ def build_wheel(
     config_settings: Dict[str, str],
     debug: bool = False,
 ) -> Path:
-
     python_exe = env_dir / "bin" / "python"
 
     def _subprocess_runner(
@@ -581,6 +604,7 @@ def main(args: Any, temp_dir: Path, is_debug: bool) -> None:
         target_python_exe=args.target_python_executable,
         sysconfig_vars=sysconfig_vars,
         path=absolute_path_entries,
+        wheels=args.wheels,
         target_env=target_environment,
         always_use_crossenv=args.always_use_crossenv,
     )
@@ -638,6 +662,15 @@ def parse_flags(argv) -> Any:
         type=Path,
         action="append",
         help="An entry to add to PYTHONPATH",
+    )
+
+    parser.add_argument(
+        "--wheel",
+        type=Path,
+        dest="wheels",
+        action="append",
+        default=[],
+        help="TODO",
     )
 
     parser.add_argument(
