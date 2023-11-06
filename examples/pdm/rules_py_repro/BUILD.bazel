@@ -1,8 +1,31 @@
 load("@aspect_rules_py//py:defs.bzl", "py_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@example_lock_repo_rules_py//:requirements.bzl", "requirement")
+load("//:py_image_layer.bzl", "py_image_layer")
 
 py_binary(
-    name = "main",
+    name = "binary",
     srcs = ["main.py"],
     deps = [requirement("grpclib")],
+)
+
+py_image_layer(
+    name = "binary_layer",
+    binary = ":binary",
+    root = "/",
+)
+
+# FIXME the image contains all the whl-files
+oci_image(
+    name = "image",
+    base = "@debian",
+    entrypoint = ["/{}/binary".format(package_name())],
+    tars = [":binary_layer"],
+    env = {"PYTHONUNBUFFERED": "1"},
+)
+
+oci_tarball(
+    name = "tarball",
+    image = ":image",
+    repo_tags = ["{}:latest".format(package_name())],
 )
